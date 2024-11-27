@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "BadImage": {
+            "additionalProperties": false,
+            "type": "object"
+        },
+        "Image": {
+            "additionalProperties": false,
+            "type": "object"
+        },
+        "ImageMix": {
+            "anyOf": [
+                {
+                    "additionalProperties": false,
+                    "type": "object"
+                },
+                {
+                    "additionalProperties": false,
+                    "type": "object"
+                }
+            ]
+        },
+        "metadata": {
+            "additionalProperties": false,
+            "properties": {
+                "caption": {
+                    "additionalProperties": false,
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "string"
+                        }
+                    },
+                    "properties": {
+                        "length": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "length"
+                    ],
+                    "type": "object"
+                },
+                "date": {
+                    "additionalProperties": false,
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "string"
+                        }
+                    },
+                    "properties": {
+                        "length": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "length"
+                    ],
+                    "type": "object"
+                },
+                "photographer": {
+                    "additionalProperties": false,
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "string"
+                        }
+                    },
+                    "properties": {
+                        "length": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "length"
+                    ],
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        }
+    }
+}
+

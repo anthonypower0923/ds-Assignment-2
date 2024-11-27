@@ -25,22 +25,26 @@ export const handler: SQSHandler = async (event: any) => {
   for (const record of event.Records) {
     const recordBody = JSON.parse(record.body);
     const snsMessage = JSON.parse(recordBody.Message);
-
+    console.log("Looking at records")
     if (snsMessage.Records) {
       console.log("Record body ", JSON.stringify(snsMessage));
       for (const messageRecord of snsMessage.Records) {
+        console.log("If there is a message record")
         const s3e = messageRecord.s3;
         const srcBucket = s3e.bucket.name;
         // Object key may have spaces or unicode non-ASCII characters.
         const srcKey = decodeURIComponent(s3e.object.key.replace(/\+/g, " "));
         try {
+          console.log("Constructing Email")
           const { name, email, message }: ContactDetails = {
             name: "The Photo Album",
             email: SES_EMAIL_FROM,
-            message: `We received your Image. Its URL is s3://${srcBucket}/${srcKey}`,
+            message: "Sent image was rejected due to incorrect file extension. Accepted extensions are '.jpeg' '.jpg' and 'png'.",
           };
+          console.log("Trying to send email")
           const params = sendEmailParams({ name, email, message });
           await client.send(new SendEmailCommand(params));
+          console.log("Email sent successfully")
         } catch (error: unknown) {
           console.log("ERROR is: ", error);
           // return;
