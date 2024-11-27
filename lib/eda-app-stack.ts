@@ -140,12 +140,12 @@ export class EDAAppStack extends cdk.Stack {
   mailerFn.addEventSource(newImageMailEventSource);
   failedMailerFn.addEventSource(rejectedMailEventSource)
 
-  // failedImagesFn.addEventSource(
-  //   new SqsEventSource(badImagesQueue, {
-  //     maxBatchingWindow: cdk.Duration.seconds(10),
-  //     maxConcurrency: 2,
-  //   })
-  // );
+  failedMailerFn.addEventSource(
+    new SqsEventSource(badImagesQueue, {
+      maxBatchingWindow: cdk.Duration.seconds(10),
+      maxConcurrency: 2,
+    })
+  );
 
   // Permissions
 

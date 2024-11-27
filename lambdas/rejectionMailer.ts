@@ -34,6 +34,7 @@ export const handler: SQSHandler = async (event: any) => {
         const srcBucket = s3e.bucket.name;
         // Object key may have spaces or unicode non-ASCII characters.
         const srcKey = decodeURIComponent(s3e.object.key.replace(/\+/g, " "));
+        if (!srcKey.includes("png") && !srcKey.includes("jpeg")) {
         try {
           console.log("Constructing Email")
           const { name, email, message }: ContactDetails = {
@@ -50,6 +51,7 @@ export const handler: SQSHandler = async (event: any) => {
           // return;
         }
       }
+    }
     }
   }
 };
