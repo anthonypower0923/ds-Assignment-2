@@ -27,14 +27,13 @@ export const handler: SQSHandler = async (event) => {
       for (const messageRecord of snsMessage.Records) {
         const s3e = messageRecord.s3;
         const srcBucket = s3e.bucket.name;
-
-        if (!s3e.object.key.includes("jpg","jpeg","png")) {
-          const badImage = recordBody as BadImage
-          throw new Error(" Bad Image");
-        }
         // Object key may have spaces or unicode non-ASCII characters.
         const srcKey = decodeURIComponent(s3e.object.key.replace(/\+/g, " "));
         let origimage = null;
+        if (!srcKey.includes(".png") && !srcKey.includes(".jpeg")) {
+          const badImage = recordBody as BadImage
+          throw new Error(" Bad Image");
+        }
         try {
           // Download the image from the S3 source bucket.
           const params: GetObjectCommandInput = {

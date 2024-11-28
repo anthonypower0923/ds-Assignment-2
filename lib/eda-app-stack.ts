@@ -38,10 +38,6 @@ export class EDAAppStack extends cdk.Stack {
 
   // Integration infrastructure
 
-  // const imageProcessQueue = new sqs.Queue(this, "img-created-queue", {
-  //   receiveMessageWaitTime: cdk.Duration.seconds(10),
-  // });
-
   const badImagesQueue = new sqs.Queue(this, "bad-image-q", {
     retentionPeriod: cdk.Duration.minutes(10),
   });
@@ -119,16 +115,23 @@ export class EDAAppStack extends cdk.Stack {
     maxBatchingWindow: cdk.Duration.seconds(5),
   });
 
-  const rejectedMailEventSource = new events.SqsEventSource(rejectedMailQ, {
-    batchSize: 5,
-    maxBatchingWindow: cdk.Duration.seconds(5),
-  });
+  // const rejectedMailEventSource = new events.SqsEventSource(rejectedMailQ, {
+  //   batchSize: 5,
+  //   maxBatchingWindow: cdk.Duration.seconds(5),
+  // });
 
   processImageFn.addEventSource(
-    new DynamoEventSource(imagesTable, {
-       startingPosition: StartingPosition.LATEST 
+    new SqsEventSource(imagesQueue, {
+      maxBatchingWindow: cdk.Duration.seconds(5),
+      maxConcurrency: 2,  
     })
-  )
+  );
+
+  // processImageFn.addEventSource(
+  //   new DynamoEventSource(imagesTable, {
+  //      startingPosition: StartingPosition.LATEST 
+  //   })
+  // )
 
   processImageFn.addEventSource(
     new SqsEventSource(badImagesQueue, {
@@ -138,7 +141,7 @@ export class EDAAppStack extends cdk.Stack {
 
 
   mailerFn.addEventSource(newImageMailEventSource);
-  failedMailerFn.addEventSource(rejectedMailEventSource)
+  // failedMailerFn.addEventSource(rejectedMailEventSource)
 
   failedMailerFn.addEventSource(
     new SqsEventSource(badImagesQueue, {
