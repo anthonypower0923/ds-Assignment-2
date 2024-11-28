@@ -108,6 +108,10 @@ export class EDAAppStack extends cdk.Stack {
     memorySize: 1024,
     timeout: cdk.Duration.seconds(3),
     entry: `${__dirname}/../lambdas/confirmationMailer.ts`,
+    environment: {
+      srcBucket: imagesBucket.bucketName,
+      REGION: 'eu-west-1',
+    }
   });
 
 
@@ -145,10 +149,6 @@ export class EDAAppStack extends cdk.Stack {
     maxBatchingWindow: cdk.Duration.seconds(5),
   });
 
-  // const rejectedMailEventSource = new events.SqsEventSource(rejectedMailQ, {
-  //   batchSize: 5,
-  //   maxBatchingWindow: cdk.Duration.seconds(5),
-  // });
 
   processImageFn.addEventSource(
     new SqsEventSource(imagesQueue, {
@@ -157,11 +157,11 @@ export class EDAAppStack extends cdk.Stack {
     })
   );
 
-  // processImageFn.addEventSource(
-  //   new DynamoEventSource(imagesTable, {
-  //      startingPosition: StartingPosition.LATEST 
-  //   })
-  // )
+  mailerFn.addEventSource(
+    new DynamoEventSource(imagesTable, {
+       startingPosition: StartingPosition.LATEST 
+    })
+  )
 
   processImageFn.addEventSource(
     new SqsEventSource(badImagesQueue, {
@@ -171,7 +171,6 @@ export class EDAAppStack extends cdk.Stack {
 
 
   mailerFn.addEventSource(newImageMailEventSource);
-  // failedMailerFn.addEventSource(rejectedMailEventSource)
 
   failedMailerFn.addEventSource(
     new SqsEventSource(badImagesQueue, {

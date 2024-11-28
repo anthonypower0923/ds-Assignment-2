@@ -20,19 +20,18 @@ type ContactDetails = {
 
 const client = new SESClient({ region: SES_REGION});
 
-export const handler: SQSHandler = async (event: any) => {
+import type { DynamoDBStreamHandler } from "aws-lambda";
+
+export const handler: DynamoDBStreamHandler = async (event) => {
   console.log("Event ", JSON.stringify(event));
   for (const record of event.Records) {
-    const recordBody = JSON.parse(record.body);
-    const snsMessage = JSON.parse(recordBody.Message);
-
-    if (snsMessage.Records) {
-      console.log("Record body ", JSON.stringify(snsMessage));
-      for (const messageRecord of snsMessage.Records) {
-        const s3e = messageRecord.s3;
-        const srcBucket = s3e.bucket.name;
+    if (record.dynamodb?.Keys && record.eventName == 'INSERT') {
+      console.log("Record body ", JSON.stringify(record.dynamodb));
+        const srcBucket = process.env.srcBucket;
+        const id = record.dynamodb.Keys.id.S
+        if (srcBucket && id) {
         // Object key may have spaces or unicode non-ASCII characters.
-        const srcKey = decodeURIComponent(s3e.object.key.replace(/\+/g, " "));
+        const srcKey = decodeURIComponent(id.replace(/\+/g, " "));
         if (srcKey.includes("png") || srcKey.includes("jpeg")) {
         try {
           const { name, email, message }: ContactDetails = {
@@ -48,8 +47,8 @@ export const handler: SQSHandler = async (event: any) => {
         }
       }
     }
-    }
   }
+    }
 };
 
 function sendEmailParams({ name, email, message }: ContactDetails) {
