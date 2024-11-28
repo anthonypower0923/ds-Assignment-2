@@ -8,7 +8,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { BadImage } from "/opt/types";
 import type { DynamoDBStreamHandler } from "aws-lambda";
 
@@ -35,6 +35,8 @@ export const handler: SQSHandler = async (event) => {
           throw new Error(" Bad Image");
         }
         try {
+          console.log("Event Name", messageRecord.eventName)
+          if (messageRecord.eventName == 'ObjectCreated:Put') {
           // Download the image from the S3 source bucket.
           const params: GetObjectCommandInput = {
             Bucket: srcBucket,
@@ -54,6 +56,18 @@ export const handler: SQSHandler = async (event) => {
             })
           );
           console.log("Image added")
+          
+          } else if (messageRecord.eventName == 'ObjectRemoved:Delete') {
+            const deleteOutput = await ddbDocClient.send(
+              new DeleteCommand({
+                TableName: process.env.TABLE_NAME,
+                Key: {id: srcKey},
+              })
+            );
+          } else {
+            throw new Error("Invalid option. No idea how this happened")
+          }
+          console.log("Image deleted")
         } catch (error) {
           console.log(error);
         }
