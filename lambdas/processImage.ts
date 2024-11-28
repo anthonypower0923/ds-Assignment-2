@@ -44,7 +44,7 @@ export const handler: SQSHandler = async (event) => {
 
           const body = {
             id: s3e.object.key,
-            url: s3e.object.URL
+            value: ""
           }
           // Process Image ...
           const commandOutput = await ddbDocClient.send(

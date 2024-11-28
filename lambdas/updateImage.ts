@@ -1,82 +1,72 @@
-// import { APIGatewayProxyHandlerV2, SQSHandler } from "aws-lambda";
-// import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-// import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-// // import Ajv from "ajv";
-// // import schema from "../shared/types.schema.json";
+import { SNSHandler } from "aws-lambda";
+import {
+    GetObjectCommand,
+    PutObjectCommandInput,
+    GetObjectCommandInput,
+    S3Client,
+    PutObjectCommand,
+  } from "@aws-sdk/client-s3";
+  import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+  import { DynamoDBDocumentClient, PutCommand, DeleteCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+  import { BadImage } from "/opt/types";
+  import type { DynamoDBStreamHandler } from "aws-lambda";
+  import Ajv from "ajv";
+import schema from "../shared/types.schema.json";
 
-// // const ajv = new Ajv();
-// // const isValidBodyParams = ajv.compile(schema.definitions["metadata"] || {});
+const ajv = new Ajv();
+const isValidBodyParams = ajv.compile(schema.definitions["metadata"] || {});
 
-// const ddbDocClient = createDDbDocClient();
+const ddbDocClient = createDDbDocClient();
+const s3 = new S3Client();
 
-// export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
-//   try {
-//     // Print Event
-//     console.log("[EVENT]", JSON.stringify(event));
-//     const body = event.body ? JSON.parse(event.body) : undefined;
-//     if (!body) {
-//       return {
-//         statusCode: 500,
-//         headers: {
-//           "content-type": "application/json",
-//         },
-//         body: JSON.stringify({ message: "Missing request body" }),
-//       };
-//     }
-//     // NEW
-//     if (!isValidBodyParams(body)) {
-//       return {
-//         statusCode: 500,
-//         headers: {
-//           "content-type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           message: `Incorrect type. Must be an existing image.`,
-//         }),
-//       };
-//     }
+export const handler: SNSHandler = async (event) => {
+    console.log("Event ", JSON.stringify(event));
+    try {
+    for (const record of event.Records) {
+        const message = JSON.parse(record.Sns.Message)
+        console.log("Message ", message)
+        const id = message.id
+        const value = message.value
 
-//     const commandOutput = await ddbDocClient.send(
-//       new UpdateCommand({
-//         TableName: process.env.TABLE_NAME,
-//         Key: body.id,
-//         ExpressionAttributeValues: {
-//             Caption: body.caption,
-//             Date: body.date,
-//             Photographer: body.photographer,
-//         },
-//         ReturnValues: "ALL_NEW"
-//       })
-//     );
-//     return {
-//       statusCode: 201,
-//       headers: {
-//         "content-type": "application/json",
-//       },
-//       body: JSON.stringify({ message: "Game added" }),
-//     };
-//   } catch (error: any) {
-//     console.log(JSON.stringify(error));
-//     return {
-//       statusCode: 500,
-//       headers: {
-//         "content-type": "application/json",
-//       },
-//       body: JSON.stringify({ error }),
-//     };
-//   }
-// };
+        if (!id.includes(".png") && !id.includes(".jpeg")) {
+            throw new Error(" Bad Image");
+        }
 
-// function createDDbDocClient() {
-//   const ddbClient = new DynamoDBClient({ region: process.env.REGION });
-//   const marshallOptions = {
-//     convertEmptyValues: true,
-//     removeUndefinedValues: true,
-//     convertClassInstanceToMap: true,
-//   };
-//   const unmarshallOptions = {
-//     wrapNumbers: false,
-//   };
-//   const translateConfig = { marshallOptions, unmarshallOptions };
-//   return DynamoDBDocumentClient.from(ddbClient, translateConfig);
-// }
+        const srcKey = decodeURIComponent(id.replace(/\+/g, " "));
+
+          const commandOutput = await ddbDocClient.send(
+            new UpdateCommand({
+              TableName: process.env.TABLE_NAME,
+              UpdateExpression: 'SET #v = :val1',
+              Key: {id: srcKey},
+              ExpressionAttributeValues: {
+                ":val1": value,
+              },
+              ExpressionAttributeNames: {
+                "#v": "value"
+              },
+            })
+          );
+
+          console.log("Image updated in table.")
+    }
+
+} catch (error) {
+    console.log(error);
+}
+}
+
+
+
+function createDDbDocClient() {
+    const ddbClient = new DynamoDBClient({ region: process.env.REGION });
+    const marshallOptions = {
+      convertEmptyValues: true,
+      removeUndefinedValues: true,
+      convertClassInstanceToMap: true,
+    };
+    const unmarshallOptions = {
+      wrapNumbers: false,
+    };
+    return DynamoDBDocumentClient.from(ddbClient);
+  }

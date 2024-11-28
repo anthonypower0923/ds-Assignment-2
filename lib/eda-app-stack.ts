@@ -81,6 +81,21 @@ export class EDAAppStack extends cdk.Stack {
     }
   );
 
+  const updateImageFn = new lambdanode.NodejsFunction(
+    this,
+    "UpdateImageFn",
+    {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      memorySize: 128,
+      timeout: cdk.Duration.seconds(3),
+      entry: `${__dirname}/../lambdas/updateImage.ts`,
+      environment: {
+        TABLE_NAME: imagesTable.tableName,
+        REGION: 'eu-west-1',
+      }
+    }
+  );
+
   const failedMailerFn = new lambdanode.NodejsFunction(this, "FailedMailerFn", {
     runtime: lambda.Runtime.NODEJS_16_X,
     entry: `${__dirname}/../lambdas/rejectionMailer.ts`,
@@ -106,6 +121,16 @@ export class EDAAppStack extends cdk.Stack {
   imageTopic.addSubscription(
   new subs.SqsSubscription(imagesQueue)
   );
+
+  imageTopic.addSubscription(
+    new subs.LambdaSubscription(updateImageFn, {
+      filterPolicy: {
+        metadata_type: sns.SubscriptionFilter.stringFilter({
+            allowlist: ['Caption','Date','Photographer']
+        }),
+    }}
+    )
+  )
 
   imageTopic.addSubscription(new subs.SqsSubscription(mailerQ));
   imageTopic.addSubscription(new subs.SqsSubscription(rejectedMailQ))
@@ -155,6 +180,7 @@ export class EDAAppStack extends cdk.Stack {
   imagesBucket.grantRead(processImageFn);
 
   imagesTable.grantReadWriteData(processImageFn);
+  imagesTable.grantReadWriteData(updateImageFn)
 
   mailerFn.addToRolePolicy(
     new iam.PolicyStatement({
@@ -185,6 +211,10 @@ export class EDAAppStack extends cdk.Stack {
     
     new cdk.CfnOutput(this, "bucketName", {
       value: imagesBucket.bucketName,
+    });
+
+    new cdk.CfnOutput(this, "topicARN", {
+      value: imageTopic.topicArn,
     });
   }
 }
