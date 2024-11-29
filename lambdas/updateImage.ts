@@ -27,6 +27,7 @@ export const handler: SNSHandler = async (event) => {
         console.log("Message ", message)
         const id = message.id
         const value = message.value
+        const type = record.Sns.MessageAttributes.metadata_type.Value.toLowerCase()
 
         if (!id.includes(".png") && !id.includes(".jpeg")) {
             throw new Error(" Bad Image");
@@ -43,7 +44,7 @@ export const handler: SNSHandler = async (event) => {
                 ":val1": value,
               },
               ExpressionAttributeNames: {
-                "#v": "value"
+                "#v": type
               },
             })
           );

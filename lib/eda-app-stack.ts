@@ -170,7 +170,7 @@ export class EDAAppStack extends cdk.Stack {
     }));
 
 
-  mailerFn.addEventSource(newImageMailEventSource);
+  // mailerFn.addEventSource(newImageMailEventSource);
 
   failedMailerFn.addEventSource(
     new SqsEventSource(badImagesQueue, {

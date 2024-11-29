@@ -46,7 +46,9 @@ export const handler: SQSHandler = async (event) => {
 
           const body = {
             id: s3e.object.key,
-            value: ""
+            caption: "",
+            date: "",
+            photographer: ""
           }
           // Process Image ...
           const commandOutput = await ddbDocClient.send(
@@ -64,10 +66,10 @@ export const handler: SQSHandler = async (event) => {
                 Key: {id: srcKey},
               })
             );
+            console.log("Image deleted")
           } else {
             throw new Error("Invalid option. No idea how this happened")
           }
-          console.log("Image deleted")
         } catch (error) {
           console.log(error);
         }
