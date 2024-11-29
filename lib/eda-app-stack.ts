@@ -129,7 +129,7 @@ export class EDAAppStack extends cdk.Stack {
   // SQS --> Lambda
   imageTopic.addSubscription(
   new subs.SqsSubscription(imagesQueue)
-  );
+)
 
   imageTopic.addSubscription(
     new subs.LambdaSubscription(updateImageFn, {
@@ -142,13 +142,8 @@ export class EDAAppStack extends cdk.Stack {
   )
 
   imageTopic.addSubscription(new subs.SqsSubscription(mailerQ));
+  
   imageTopic.addSubscription(new subs.SqsSubscription(rejectedMailQ))
-
-  const newImageMailEventSource = new events.SqsEventSource(mailerQ, {
-    batchSize: 5,
-    maxBatchingWindow: cdk.Duration.seconds(5),
-  });
-
 
   processImageFn.addEventSource(
     new SqsEventSource(imagesQueue, {
@@ -169,8 +164,6 @@ export class EDAAppStack extends cdk.Stack {
       maxConcurrency: 2,
     }));
 
-
-  // mailerFn.addEventSource(newImageMailEventSource);
 
   failedMailerFn.addEventSource(
     new SqsEventSource(badImagesQueue, {
